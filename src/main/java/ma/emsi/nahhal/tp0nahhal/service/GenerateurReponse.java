@@ -1,36 +1,50 @@
 package ma.emsi.nahhal.tp0nahhal.service;
 
 import jakarta.enterprise.context.Dependent;
-
 import java.io.Serializable;
 import java.util.Locale;
 
-/**
- * Classe de service pour les modificateurs de question.
- * Un modificateur de question prend en entrée une question et retourne
- * la question modifiée.
- */
-@Dependent // Portée CDI pour rendre la classe injectable par CDI dans les autres classes.
-// Portée Dependent : l'instance sera supprimée quand la classe qui l'a injectée sera supprimée.
-public class GenerateurReponse implements Serializable { // Serializable car CDI peut mettre l'instance en mémoire secondaire.
+@Dependent
+public class GenerateurReponse implements Serializable {
+
     private boolean roleSystemeAffiche = false;
 
-    /**
-     * Génère une réponse à une question.
-     * @param question La question à modifier.
-     * @param roleSysteme Le rôle système à utiliser pour la modification de la question.
-     * @return La question modifiée : le rôle système en majuscule au début de la question, s'il n'est pas null,
-     * suivi d'un saut de ligne,
-     * puis la question en minuscule, le tout entouré de "||".
-     */
     public String genererReponse(String question, String roleSysteme) {
-        String resultat = "||";
-        if (!this.roleSystemeAffiche && roleSysteme != null) {
-            // Ajouter le rôle système en majuscule au début du résultat, suivi d'un saut de ligne.
-            resultat += roleSysteme.toUpperCase(Locale.FRENCH) + "\n";
-            this.roleSystemeAffiche = true;
+        // -1 permet de conserver les champs vides en fin de ligne.
+        String[] champs = question.split(";", -1);
+        int champsVides = 0;
+
+        for (String champ : champs) {
+            if (champ.isBlank()) {
+                champsVides++;
+            }
         }
-        resultat += question.toLowerCase(Locale.FRENCH) + "||";
+
+        int champsRemplis = champs.length - champsVides;
+        double tauxRemplissage = 100.0 * champsRemplis / champs.length;
+
+        String resultat = "";
+
+        if (!roleSystemeAffiche && roleSysteme != null) {
+            resultat += roleSysteme.toUpperCase(Locale.FRENCH) + "\n\n";
+            roleSystemeAffiche = true;
+        }
+
+        resultat += "CONTROLE QUALITE DES DONNEES\n";
+        resultat += "Separateur utilise : ;\n";
+        resultat += "Nombre de champs : " + champs.length + "\n";
+        resultat += "Champs remplis : " + champsRemplis + "\n";
+        resultat += "Champs vides : " + champsVides + "\n";
+        resultat += String.format(
+                Locale.FRENCH,
+                "Taux de remplissage : %.1f %%\n",
+                tauxRemplissage
+        );
+
+        resultat += champsVides == 0
+                ? "Bilan : tous les champs sont renseignes."
+                : "Bilan : des donnees sont manquantes.";
+
         return resultat;
     }
 }
